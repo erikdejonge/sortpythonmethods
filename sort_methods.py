@@ -40,7 +40,7 @@ def main():
     globals()[module_name] = __import__(module_name)
     print(globals().keys())
 
-    imp.load_module(fname, os.path.basename(fname), os.path.dirname(fname))
+    
     tree = ast.parse(open(fname).read(), os.path.basename(fname), 'exec')
     names = set()
     prev = None
