@@ -42,7 +42,7 @@ def arg_parse():
     arg_parse
     @return: @rtype:
     """
-    print("hello")
+
     parser = ArgumentParser()
     parser.add_argument("-m", dest="modulename", help="module name on which to sort globalmethods")
     parser.add_argument("-f", dest="filename", help="file name on which to sort globalmethods")

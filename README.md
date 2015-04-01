@@ -2,6 +2,7 @@
 Rearrange methods alphabetically in a Python source file.
 - Python3
 
+
 ## sortorder
 1. docstring
 2. future imports
