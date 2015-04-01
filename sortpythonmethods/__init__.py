@@ -176,6 +176,15 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     # sort names and request source code from module
     names = sorted(names)
     source = open(fname).read()
+    if '= """' in source or '="""' in source:
+        if writefile:
+            print("not written, multiline not supported")
+        else:
+            print("#\n# not written, multiline not supported\n#\n")
+            print(open(fname).read())
+
+        return
+
     codes = []
 
     importsout = []
