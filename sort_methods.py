@@ -93,12 +93,14 @@ def main():
 
         elif isinstance(n, ast.Import):
             for i in n.names:
-                imports.append(i.name)
+                if "builtins" not in i.name:
+                    imports.append(i.name)
 
         elif isinstance(n, ast.ImportFrom):
-            if n.module not in importfrom:
-                importfrom[n.module] = []
-            importfrom[n.module].append(n.names)
+            if "builtins" not in n.module:
+                if n.module not in importfrom:
+                    importfrom[n.module] = []
+                importfrom[n.module].append(n.names)
         else:
             pass
 
@@ -108,6 +110,8 @@ def main():
         nl = []
         for l in importfrom[k]:
             for i in l:
+
+
                 nl.append(i.name)
         importfrom[k] = nl
 
@@ -134,20 +138,16 @@ def main():
 
     for n in importfromlist:
         code = "from " + n + " import "
-        numspaces = len(code)
+
 
         importlist = importfrom[n]
         importlist.sort(key=lambda x: (x, len(x)))
-        first = True
+
 
         for m in importlist:
-            if not first:
-                code += (numspaces - 1) * " "
+            code += m + ", "
 
-            code += m + ", \\\n "
-            first = False
-
-        code = code.strip().strip(", \\")
+        code = code.strip().strip(",")
 
         importsout.append((code, 1))
 
@@ -171,10 +171,11 @@ def main():
     firstsource = source[:lastfind]
     last = source[lastfind:]
     middle = ""
-    first = "#!/usr/bin/env python3\n# coding=utf-8\n"
-    first += '"""'
-    first += moduledocstring
-    first += '"""\n\n'
+    first = ""
+    header = "#!/usr/bin/env python3\n# coding=utf-8\n"
+    header += '"""'
+    header += moduledocstring
+    header += '"""\n\n'
     fromdetected = False
 
     for code in importsout:
@@ -184,22 +185,24 @@ def main():
 
             fromdetected = True
 
-        first += code[0]
-        first += code[1] * "\n"
+        if "future " in code[0] or "__future__" in code[0]:
+            first = code[0] + "\n\n" + first
+        else:
+            first += code[0]
+            first += "\n"
 
+    source = header + "\n" + first
     first += firstsource.split(moduledocstring)[1].lstrip().lstrip('"""')
-
-    
     for code in codes:
         middle += code[0]
         middle += code[1] * "\n"
 
-    source = first + "\n\n\n" + middle + "\n\n" + last
+    source = header + "\n" + first + "\n\n\n" + middle + "\n\n" + last
     lastfind, source = remove_breaks(source)
 
     # write new source
     if writefile:
-        nw = open(fname + ".sorted", "wt")
+        nw = open(fname, "wt")
         nw.write(source)
         nw.close()
     else:
