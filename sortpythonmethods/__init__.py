@@ -6,12 +6,12 @@ Active8 (30-03-15)
 author: erik@a8.nl
 license: GNU-GPL2
 """
+
 import os
 import ast
+import sys
 import inspect
 from argparse import ArgumentParser
-from consoleprinter import running_in_debugger
-
 
 def remove_breaks(source):
     """
@@ -81,6 +81,12 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     # get filepath of module implementation
     fname = globals()[module_name].__file__
+
+    if not os.path.isdir(os.path.dirname(fname)):
+        if filename is None:
+            raise AssertionError("not a dir")
+        else:
+            fname = filename
 
     # get all function names on global scope
     tree = ast.parse(open(fname).read(), os.path.basename(fname))
@@ -250,7 +256,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         nw.write(source)
         nw.close()
     else:
-        if running_in_debugger(include_tests=True):
+        if not sys.stdout.isatty():
             print(source)
         else:
 
