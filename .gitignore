@@ -3,3 +3,7 @@ nohup.out
 .DS_Store
 *.pyc
 .idea
+build/
+dist/
+sortpythonmethods.egg-info/
+
