@@ -8,7 +8,7 @@ Rearrange methods alphabetically in a Python source file.
 2. future imports
 3. imports first on alphabet then on length (apo, alpha-pipe-organ)
 4. from, modules on apo, imports on alpa
-5. classes sorted on classname alpha (internals of class unchanged)
+5. classes sorted on baseclass then on classname alpha (internals of class unchanged)
 6. methods sorted on methodname alpha
 
 
@@ -20,7 +20,7 @@ Source file before sort
 Docstring is required
 """
 import sys
-import httplib
+import http
 import email
 import concurrent.futures
 import os
@@ -38,6 +38,12 @@ def applemethod():
     pass
    
 class Alpha(object):
+    pass
+    
+class ZZ(object):
+    pass
+    
+class AA(ZZ):
     pass
 ```
 

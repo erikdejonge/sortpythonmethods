@@ -12,13 +12,14 @@ standard_library.install_aliases()
 
 from setuptools import setup
 setup(name='sortpythonmethods',
-      version='6',
+      version='7',
       description='Sort methods, imports and classes in a python source file',
       url='https://github.com/erikdejonge/sortpythonmethod',
       author='Erik de Jonge',
       author_email='erik@a8.nl',
       license='GPL',
       packages=['sortpythonmethods'],
+
       zip_safe=True,
       entry_points={
           'console_scripts': [
@@ -34,4 +35,5 @@ setup(name='sortpythonmethods',
           "Topic :: Software Development :: Libraries :: Python Modules",
           "Topic :: Software Development :: Testing",
           "Topic :: System",
-      ])
+      ],
+      install_requires=['pygments'])

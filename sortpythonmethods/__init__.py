@@ -6,12 +6,12 @@ Active8 (30-03-15)
 author: erik@a8.nl
 license: GNU-GPL2
 """
-
 import os
 import ast
 import sys
 import inspect
 from argparse import ArgumentParser
+
 
 def remove_breaks(source):
     """
@@ -42,13 +42,26 @@ def arg_parse():
     arg_parse
     @return: @rtype:
     """
-
     parser = ArgumentParser()
     parser.add_argument("-m", dest="modulename", help="module name on which to sort globalmethods")
     parser.add_argument("-f", dest="filename", help="file name on which to sort globalmethods")
     parser.add_argument("-w", dest="write", help="write output to file", action="store_true")
     args = parser.parse_args()
     return parser, args.modulename, args.filename, args.write
+
+
+def get_source_lines(codes, object_name, module_name, source):
+    """
+    @type codes: list
+    @type object_name: str
+    @type module_name: str
+    @type source: str
+    @return: tuple
+    """
+    code = "".join(inspect.getsourcelines(getattr(globals()[module_name], object_name))[0])
+    codes.append((code, 3))
+    source = source.replace(code, "")
+    return source, codes
 
 
 def sortmethods(filename=None, module_name=None, writefile=False):
@@ -119,10 +132,9 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         elif isinstance(n, ast.ClassDef):
             classes[n.name] = []
 
-            for i in ast.walk(n):
-                if isinstance(i, ast.FunctionDef):
-
-                    classes[n.name].append(i.name)
+            for i in n.bases:
+                if i.id != "object":
+                    classes[n.name].append(i.id)
 
         elif isinstance(n, ast.Import):
             for i in n.names:
@@ -187,16 +199,43 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     source = [x for x in sourcesplit if not x.startswith("import ") and not x.startswith("from ")]
     source = "\n".join(source)
     classnames = sorted(classes.keys())
+    import collections
+
+
+
+
+    bsort = False
+    cnt = 0
+    while not bsort:
+        cnt += 1
+        if cnt > 100:
+            raise AssertionError("infinite loop")
+        baseclass_seen = []
+        baseclass_missing = []
+        classnamesbase = collections.deque()
+        for k in classnames:
+            baseclass_seen.append(k)
+            for k2 in classes[k]:
+                if k2 not in baseclass_seen:
+                    baseclass_missing.append(k2)
+        if len(baseclass_missing) == 0:
+            bsort = True
+        else:
+
+            for k in baseclass_missing:
+                if k not in classnamesbase:
+                    classnamesbase.appendleft(k)
+
+            for k in baseclass_seen:
+                if k not in classnamesbase:
+                    classnamesbase.append(k)
+            classnames = list(classnamesbase)
 
     for k in classnames:
-        code = "".join(inspect.getsourcelines(getattr(globals()[module_name], k))[0])
-        codes.append((code, 3))
-        source = source.replace(code, "")
+        source, codes = get_source_lines(codes, k, module_name, source)
 
     for n in names:
-        code = "".join(inspect.getsourcelines(getattr(globals()[module_name], n))[0])
-        codes.append((code, 3))
-        source = source.replace(code, "")
+        source, codes = get_source_lines(codes, n, module_name, source)
 
     for line in [x for x in source.split("\n") if len(x.strip()) > 0]:
         if "# noinspection" in line:
