@@ -19,14 +19,20 @@ def remove_breaks(source):
     @return: None
     """
     lastfind = -1
-
+    cnt = 0
+    source = "\n".join([x.rstrip() for x in source.split("\n")])
     while True:
+        cnt += 1
         source = source.replace("\n\n\n\n", "\n\n\n")
 
         if source.count("\n\n\n\n") == 0:
             break
 
         lastfind = source.find("\n\n\n\n")
+
+    while cnt < 20:
+        source = source.replace("\n\n\n\n", "\n\n\n")
+        cnt += 1
 
     return lastfind, source
 
@@ -36,6 +42,7 @@ def arg_parse():
     arg_parse
     @return: @rtype:
     """
+    print("hello")
     parser = ArgumentParser()
     parser.add_argument("-m", dest="modulename", help="module name on which to sort globalmethods")
     parser.add_argument("-f", dest="filename", help="file name on which to sort globalmethods")
@@ -198,7 +205,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     header = "#!/usr/bin/env python3\n# coding=utf-8\n"
     header += '"""'
     header += moduledocstring
-    header += '"""\n\n'
+    header += '"""'
     fromdetected = False
 
     for code in importsout:
@@ -234,7 +241,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         middle += code[0]
         middle += code[1] * "\n"
 
-    source = header + "\n" + first + "\n\n\n" + middle + "\n\n" + last
+    source = header + "\n\n" + first.strip() + "\n\n\n" + middle + "\n\n" + last
     lastfind, source = remove_breaks(source)
 
     # write new source
