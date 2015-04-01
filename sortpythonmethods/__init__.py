@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # coding=utf-8
 """
 cryptoboxcli
@@ -6,11 +7,17 @@ Active8 (30-03-15)
 author: erik@a8.nl
 license: GNU-GPL2
 """
-import os
 import ast
-import sys
+import collections
+import collections
+import collections
 import inspect
+import os
+import sys
 from argparse import ArgumentParser
+from pygments import highlight, highlight, highlight
+from pygments.lexers import PythonLexer, PythonLexer, PythonLexer
+from pygments.formatters import TerminalFormatter, TerminalFormatter, TerminalFormatter
 
 
 def remove_breaks(source):
@@ -113,7 +120,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     cnt = 0
 
     for n in ast.walk(tree):
-        # noinspection PyBroadException
         try:
             if moduledocstring is None and cnt < 5:
                 moduledocstring = n.value.s
@@ -199,29 +205,32 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     source = [x for x in sourcesplit if not x.startswith("import ") and not x.startswith("from ")]
     source = "\n".join(source)
     classnames = sorted(classes.keys())
+
     import collections
-
-
-
-
     bsort = False
     cnt = 0
+
     while not bsort:
         cnt += 1
+
         if cnt > 100:
             raise AssertionError("infinite loop")
+
         baseclass_seen = []
         baseclass_missing = []
         classnamesbase = collections.deque()
+
         for k in classnames:
-            baseclass_seen.append(k)
-            for k2 in classes[k]:
-                if k2 not in baseclass_seen:
-                    baseclass_missing.append(k2)
+            if k in classes:
+                baseclass_seen.append(k)
+                for k2 in classes[k]:
+                    if k2 not in baseclass_seen:
+                        if k2 in classes:
+                            baseclass_missing.append(k2)
+
         if len(baseclass_missing) == 0:
             bsort = True
         else:
-
             for k in baseclass_missing:
                 if k not in classnamesbase:
                     classnamesbase.appendleft(k)
@@ -229,6 +238,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             for k in baseclass_seen:
                 if k not in classnamesbase:
                     classnamesbase.append(k)
+
             classnames = list(classnamesbase)
 
     for k in classnames:
@@ -238,8 +248,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         source, codes = get_source_lines(codes, n, module_name, source)
 
     for line in [x for x in source.split("\n") if len(x.strip()) > 0]:
-        if "# noinspection" in line:
-            source = source.replace(line, "")
+        source = source.replace(line, "")
 
     # replace code block in original file, and pasted sorted functions back in
     lastfind, source = remove_breaks(source)
@@ -266,7 +275,12 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             first += code[0]
             first += "\n"
 
-    first += firstsource.split(moduledocstring)[1].lstrip().lstrip('"""')
+    fss = firstsource.split(moduledocstring)
+
+    if len(fss) > 1:
+        fssc = fss[1].lstrip().lstrip('"""')
+        first += fssc
+
     for code in codes:
         codesplit = code[0].split("\n")
 
@@ -298,15 +312,9 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         if not sys.stdout.isatty():
             print(source)
         else:
-
-            # noinspection PyBroadException
             try:
                 from pygments import highlight
-
-                # noinspection PyUnresolvedReferences
                 from pygments.lexers import PythonLexer
-
-                # noinspection PyUnresolvedReferences
                 from pygments.formatters import TerminalFormatter
                 print(highlight(source, PythonLexer(), TerminalFormatter()))
             except:
