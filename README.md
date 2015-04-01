@@ -28,23 +28,29 @@ import os
 class Zorro(object):
     pass
 
-def foobar():
+class actie(object):
     pass
-    
-def helloworld():
-    pass
-    
+
 def applemethod():
     pass
-   
-class Alpha(object):
+
+def foobar():
     pass
-    
+
+class Alpha1(object):
+    pass
+
+
+def helloworld():
+    pass
+
 class ZZ(object):
     pass
-    
-class AA(ZZ):
+
+
+class Alpha2(ZZ):
     pass
+
 ```
 
 Run command
@@ -67,12 +73,23 @@ import os
 import sys
 import concurrent.futures
 
+class ZZ(object):
+    pass
 
-class Alpha(object):
+
+class Alpha1(object):
+    pass
+
+
+class Alpha2(ZZ):
     pass
 
 
 class Zorro(object):
+    pass
+
+
+class actie(object):
     pass
 
 
@@ -88,3 +105,4 @@ def helloworld():
     pass
 
 ```
+
