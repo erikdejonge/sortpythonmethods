@@ -3,11 +3,13 @@
 """
 sortpython
 """
+
 import ast
 import collections
 import inspect
 import os
 import sys
+
 from argparse import ArgumentParser
 from pygments import highlight
 from pygments.lexers import PythonLexer
@@ -301,7 +303,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     sourcesplit = source.split("\n")
 
-    source = [x for x in sourcesplit if not x.startswith("import ") and not x.startswith("from ") and not x.startswith("# noinspection PyUnresolvedReferences")]
+    source = [x for x in sourcesplit if not x.startswith("import ") and not x.startswith("from ") and not x.startswith("# noinspection")]
     source = "\n".join(source)
     classnames = sorted(classes.keys())
     bsort = False
@@ -441,7 +443,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                 print(highlight(source, PythonLexer(), TerminalFormatter()))
             except:
                 print(source)
-
 
 if __name__ == "__main__":
     main()
