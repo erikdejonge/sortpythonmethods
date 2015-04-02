@@ -12,6 +12,15 @@ Rearrange methods alphabetically in a Python source file.
 6. methods sorted on methodname alpha
 
 
+## pep8
+Can be combined with cp-pep8 for consistent readable code
+
+```bash
+sortpythonmethods -f myfile.py -w
+python2 ~/cp.py -f myfile.py 
+```
+
+
 ## example
 
 Source file before sort
@@ -33,10 +42,8 @@ class actie(object):
 
 def applemethod():
     pass
-
 def foobar():
     pass
-
 class Alpha1(object):
     pass
 
@@ -54,6 +61,7 @@ class Alpha2(ZZ):
 ```
 
 Run command
+
 ```bash
 sortpythonmethods -f myfile.py
 ```
@@ -106,3 +114,14 @@ def helloworld():
 
 ```
 
+## completeness
+- baseclasses
+- globals
+- globalmethod calls
+- comments
+
+## todo
+- global pycharm directives
+
+##screenshot
+![sorted_methods](res/sort_methods.jpg "Sorted methods in IntelliJ")
