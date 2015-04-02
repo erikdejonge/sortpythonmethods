@@ -27,14 +27,23 @@ def helloworld():
     """
     helloworld
     """
-    pass
+    s = """foo
+    bar hello
+    world
+    """
+    print(s)
 
 
 def applemethod():
     """
     applemethod
     """
-    pass
+    print("hello world")
+    s = """foo
+    s = foo@type "hello world": str
+    @return: None
+    bar"""
+    print(s)
 
 
 class Alpha(object):
@@ -50,17 +59,20 @@ class BBBB(Zorro):
     """
     pass
 
+
 class ZZZ(BBBB):
     """
     ZZZ
     """
     pass
 
+
 class KKK(BBBB):
     """
     KKK
     """
     pass
+
 
 class AAA(BBBB):
     """

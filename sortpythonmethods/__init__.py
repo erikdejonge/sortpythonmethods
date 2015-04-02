@@ -9,15 +9,18 @@ license: GNU-GPL2
 """
 import ast
 import collections
-import collections
-import collections
 import inspect
 import os
 import sys
 from argparse import ArgumentParser
-from pygments import highlight, highlight, highlight
-from pygments.lexers import PythonLexer, PythonLexer, PythonLexer
-from pygments.formatters import TerminalFormatter, TerminalFormatter, TerminalFormatter
+from pygments import highlight
+from consoleprinter import console
+
+# noinspection PyUnresolvedReferences
+from pygments.lexers import PythonLexer
+
+# noinspection PyUnresolvedReferences
+from pygments.formatters import TerminalFormatter
 
 
 def remove_breaks(source):
@@ -65,10 +68,18 @@ def get_source_lines(codes, object_name, module_name, source):
     @type source: str
     @return: tuple
     """
-    code = "".join(inspect.getsourcelines(getattr(globals()[module_name], object_name))[0])
-    codes.append((code, 3))
-    source = source.replace(code, "")
-    return source, codes
+    try:
+        code = "".join(inspect.getsourcelines(getattr(globals()[module_name], object_name))[0])
+        codes.append((code, 3))
+        source = source.replace(code, "")
+        return source, codes
+    except BaseException as be:
+        console("==========")
+        console(module_name, object_name)
+        console("--")
+        console(be)
+        console("==========")
+        raise
 
 
 def sortmethods(filename=None, module_name=None, writefile=False):
@@ -83,9 +94,10 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     if filename is not None:
         filename = os.path.expanduser(filename)
+        filename = os.path.abspath(filename)
 
         if not os.path.expanduser(filename):
-            print("file does not exist:", filename)
+            console("file does not exist:", filename)
             return
 
         if os.path.basename(filename) == "__init__.py":
@@ -97,7 +109,18 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         os.sys.path.append(os.path.dirname(os.path.dirname(filename)))
 
     # load module
-    globals()[module_name] = __import__(module_name)
+    try:
+        globals()[module_name] = __import__(module_name)
+    except ImportError as ie:
+        if writefile:
+            console("not written, import error", ie)
+        else:
+            console("#\n# not written, importerror " + str(ie) + "\n#\n")
+
+            if filename is not None:
+                console(open(filename).read())
+
+        return
 
     # get filepath of module implementation
     fname = globals()[module_name].__file__
@@ -108,11 +131,12 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         else:
             fname = filename
 
-    # get all function names on global scope
+    # get all function methodnames on global scope
     tree = ast.parse(open(fname).read(), os.path.basename(fname))
-    names = set()
-    prev = None
+    methodnames = []
+    nestedmethodnames = []
     classes = {}
+    linestobottom = set()
 
     imports = []
     importfrom = {}
@@ -120,6 +144,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     cnt = 0
 
     for n in ast.walk(tree):
+        # noinspection PyBroadException
         try:
             if moduledocstring is None and cnt < 5:
                 moduledocstring = n.value.s
@@ -129,18 +154,23 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         cnt += 1
 
         if isinstance(n, ast.FunctionDef):
-            if prev is not None:
-                if not isinstance(prev, ast.FunctionDef):
-                    if not isinstance(prev, ast.ClassDef):
-                        continue
+            methodnames.append((n.name, id(n)))
 
-            names.add(n.name)
+            for c in ast.walk(n):
+                if isinstance(c, ast.FunctionDef):
+                    if n.name != c.name:
+                        nestedmethodnames.append((c.name, id(c)))
+
         elif isinstance(n, ast.ClassDef):
             classes[n.name] = []
 
             for i in n.bases:
                 if i.id != "object":
                     classes[n.name].append(i.id)
+
+            for c in ast.walk(n):
+                if isinstance(c, ast.FunctionDef):
+                    nestedmethodnames.append((c.name, id(c)))
 
         elif isinstance(n, ast.Import):
             for i in n.names:
@@ -152,10 +182,36 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                 if n.module not in importfrom:
                     importfrom[n.module] = []
                 importfrom[n.module].append(n.names)
-        else:
-            pass
 
-        prev = n
+        elif isinstance(n, ast.Module):
+            start_lineno_global = None
+
+            for g in n.body:
+                if start_lineno_global is not None:
+                    # noinspection PyUnresolvedReferences
+                    linestobottom.add((start_lineno_global.lineno, g.lineno))
+                    start_lineno_global = None
+
+                if isinstance(g, ast.Assign):
+                    start_lineno_global = g
+                elif isinstance(g, ast.Expr):
+                    start_lineno_global = g
+
+    nestedmethodnames2 = [x[0] for x in nestedmethodnames]
+    nestedmethodnames2id = [x[1] for x in nestedmethodnames]
+    methodnames2 = set()
+
+    for n in methodnames:
+        add = True
+
+        if n[0] in nestedmethodnames2:
+            if n[1] in nestedmethodnames2id:
+                add = False
+
+        if add is True:
+            methodnames2.add(n[0])
+
+    methodnames = methodnames2
 
     for k in importfrom:
         nl = []
@@ -166,41 +222,47 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     if moduledocstring is None:
         if writefile:
-            print("not written, no module docstring")
+            console("not written, no module docstring")
         else:
-            print("#\n# not written, no module docstring\n#\n")
-            print(open(fname).read())
+            console("#\n# not written, no module docstring\n#\n")
+            console(open(fname).read())
 
         return
 
-    # sort names and request source code from module
-    names = sorted(names)
+    # sort methodnames and request source code from module
+    methodnames = sorted(methodnames)
     source = open(fname).read()
-    if '= """' in source or '="""' in source:
-        if writefile:
-            print("not written, multiline not supported")
-        else:
-            print("#\n# not written, multiline not supported\n#\n")
-            print(open(fname).read())
+    sourcesplit = source.split("\n")
+    linestobottom = list(linestobottom)
+    linestobottom.sort(key=lambda x: x[0])
+    global_lines = []
 
-        return
+    for ln in linestobottom:
+        cnt = ln[0] - 1
+        cont = []
+        while cnt < ln[1] - 1:
+            cont.append(sourcesplit[cnt])
+            cnt += 1
+        global_lines.append("\n".join(cont))
 
     codes = []
 
     importsout = []
+    imports = list(set(imports))
     imports.sort(key=lambda x: (x.count("."), x, len(x)))
 
     for n in imports:
         code = "import " + n
 
         importsout.append((code, 1))
-    importfromlist = list(importfrom.keys())
+    importfromlist = list(set(list(importfrom.keys())))
     importfromlist.sort(key=lambda x: (x.count("."), len(x), x))
 
     for n in importfromlist:
         code = "from " + n + " import "
 
         importlist = importfrom[n]
+        importlist = list(set(importlist))
         importlist.sort(key=lambda x: (x, len(x)))
 
         for m in importlist:
@@ -253,13 +315,12 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     for k in classnames:
         source, codes = get_source_lines(codes, k, module_name, source)
 
-    for n in names:
+    for n in methodnames:
         source, codes = get_source_lines(codes, n, module_name, source)
 
-    for line in [x for x in source.split("\n") if len(x.strip()) > 0]:
-        source = source.replace(line, "")
+    for n in global_lines:
+        source = source.replace(n, "")
 
-    # replace code block in original file, and pasted sorted functions back in
     lastfind, source = remove_breaks(source)
     firstsource = source[:lastfind]
     last = source[lastfind:]
@@ -308,6 +369,11 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
         middle += code[0]
         middle += code[1] * "\n"
+    global_lines.sort()
+
+    for line in global_lines:
+        middle += line
+        middle += "\n"
 
     source = header + "\n\n" + first.strip() + "\n\n\n" + middle + "\n\n" + last
     lastfind, source = remove_breaks(source)
@@ -317,17 +383,17 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         nw = open(fname, "wt")
         nw.write(source)
         nw.close()
+        console("sortpythonmethods done.")
     else:
         if not sys.stdout.isatty():
-            print(source)
+            console(source)
         else:
+
+            # noinspection PyBroadException
             try:
-                from pygments import highlight
-                from pygments.lexers import PythonLexer
-                from pygments.formatters import TerminalFormatter
-                print(highlight(source, PythonLexer(), TerminalFormatter()))
+                console(highlight(source, PythonLexer(), TerminalFormatter()))
             except:
-                print(source)
+                console(source, plaintext=True)
 
 
 def main():
@@ -337,8 +403,8 @@ def main():
     parser, module_name, filename, writefile = arg_parse()
 
     if module_name is None and filename is None:
-        print(parser.format_help())
-        print("-f filename or -m modulename is required\n")
+        console(parser.format_help())
+        console("-f filename or -m modulename is required\n")
         return
     sortmethods(filename, module_name, writefile)
 
