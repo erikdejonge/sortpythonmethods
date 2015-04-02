@@ -192,9 +192,12 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             classes[n.name] = []
 
             for i in n.bases:
-                if i.id != "object":
-                    classes[n.name].append(i.id)
 
+                if hasattr(i, "id"):
+                    if i.id != "object":
+                        classes[n.name].append(i.id)
+                else:
+                    print(n, i)
             for c in ast.walk(n):
                 if isinstance(c, ast.FunctionDef):
                     nestedmethodnames.append((c.name, id(c)))
