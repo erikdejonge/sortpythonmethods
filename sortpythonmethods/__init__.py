@@ -414,7 +414,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         first += line
         first += "\n"
 
-    global_lines_bottom.sort(key=lambda x: len(x))
+    global_lines_bottom.sort(key=lambda x: (x, len(x)))
 
     for line in global_lines_bottom:
         middle += line
