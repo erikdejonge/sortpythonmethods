@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf-8
 """
-cryptoboxcli
--
-Active8 (30-03-15)
-author: erik@a8.nl
-license: GNU-GPL2
+sortpython
 """
 import ast
 import collections
@@ -14,13 +10,77 @@ import os
 import sys
 from argparse import ArgumentParser
 from pygments import highlight
-from consoleprinter import console
-
-# noinspection PyUnresolvedReferences
 from pygments.lexers import PythonLexer
-
-# noinspection PyUnresolvedReferences
 from pygments.formatters import TerminalFormatter
+
+
+def arg_parse():
+    """
+    arg_parse
+    @return: @rtype:
+    """
+    parser = ArgumentParser()
+    parser.add_argument("-m", dest="modulename", help="module name on which to sort globalmethods")
+    parser.add_argument("-f", dest="filename", help="file name on which to sort globalmethods")
+    parser.add_argument("-w", dest="write", help="write output to file", action="store_true")
+    args = parser.parse_args()
+    return parser, args.modulename, args.filename, args.write
+
+
+def get_global_lines(linestobottom, sourcesplit):
+    """
+    @type linestobottom: tuple, list, set
+    @type sourcesplit: list
+    @return: list
+    """
+    global_lines = []
+
+    for ln in linestobottom:
+        cnt = ln[0] - 1
+        cont = []
+        while cnt < ln[1] - 1:
+            cont.append(sourcesplit[cnt])
+            cnt += 1
+
+        global_lines.append("\n".join(cont))
+
+    return  [x for x in global_lines if x.strip() != '"""']
+
+
+def get_source_lines(codes, object_name, module_name, source):
+    """
+    @type codes: list
+    @type object_name: str
+    @type module_name: str
+    @type source: str
+    @return: tuple
+    """
+    try:
+        code = "".join(inspect.getsourcelines(getattr(globals()[module_name], object_name))[0])
+        codes.append((code, 3))
+        source = source.replace(code, "")
+        return source, codes
+    except BaseException as be:
+        print("==========")
+        print(module_name, object_name)
+        print("--")
+        print(be)
+        print("==========")
+        raise
+
+
+def main():
+    """
+    main
+    """
+    parser, module_name, filename, writefile = arg_parse()
+
+    if module_name is None and filename is None:
+        print(parser.format_help())
+        print("-f filename or -m modulename is required\n")
+        return
+
+    sortmethods(filename, module_name, writefile)
 
 
 def remove_breaks(source):
@@ -47,41 +107,6 @@ def remove_breaks(source):
     return lastfind, source
 
 
-def arg_parse():
-    """
-    arg_parse
-    @return: @rtype:
-    """
-    parser = ArgumentParser()
-    parser.add_argument("-m", dest="modulename", help="module name on which to sort globalmethods")
-    parser.add_argument("-f", dest="filename", help="file name on which to sort globalmethods")
-    parser.add_argument("-w", dest="write", help="write output to file", action="store_true")
-    args = parser.parse_args()
-    return parser, args.modulename, args.filename, args.write
-
-
-def get_source_lines(codes, object_name, module_name, source):
-    """
-    @type codes: list
-    @type object_name: str
-    @type module_name: str
-    @type source: str
-    @return: tuple
-    """
-    try:
-        code = "".join(inspect.getsourcelines(getattr(globals()[module_name], object_name))[0])
-        codes.append((code, 3))
-        source = source.replace(code, "")
-        return source, codes
-    except BaseException as be:
-        console("==========")
-        console(module_name, object_name)
-        console("--")
-        console(be)
-        console("==========")
-        raise
-
-
 def sortmethods(filename=None, module_name=None, writefile=False):
     """
     @type filename: str, None
@@ -97,7 +122,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         filename = os.path.abspath(filename)
 
         if not os.path.expanduser(filename):
-            console("file does not exist:", filename)
+            print("file does not exist:", filename)
             return
 
         if os.path.basename(filename) == "__init__.py":
@@ -105,6 +130,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
         if module_name is None:
             module_name = os.path.basename(filename).split(".")[0]
+
         os.sys.path.append(os.path.dirname(filename))
         os.sys.path.append(os.path.dirname(os.path.dirname(filename)))
 
@@ -113,12 +139,12 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         globals()[module_name] = __import__(module_name)
     except ImportError as ie:
         if writefile:
-            console("not written, import error", ie)
+            print("not written, import error", ie)
         else:
-            console("#\n# not written, importerror " + str(ie) + "\n#\n")
+            print("#\n# not written, importerror " + str(ie) + "\n#\n")
 
             if filename is not None:
-                console(open(filename).read())
+                print(open(filename).read())
 
         return
 
@@ -137,6 +163,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     nestedmethodnames = []
     classes = {}
     linestobottom = set()
+    linestotop = set()
 
     imports = []
     importfrom = {}
@@ -188,8 +215,11 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
             for g in n.body:
                 if start_lineno_global is not None:
-                    # noinspection PyUnresolvedReferences
-                    linestobottom.add((start_lineno_global.lineno, g.lineno))
+                    if isinstance(start_lineno_global, ast.Assign):
+                        linestotop.add((start_lineno_global.lineno, g.lineno))
+                    elif isinstance(start_lineno_global, ast.Expr):
+                        linestobottom.add((start_lineno_global.lineno, g.lineno))
+
                     start_lineno_global = None
 
                 if isinstance(g, ast.Assign):
@@ -222,10 +252,10 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     if moduledocstring is None:
         if writefile:
-            console("not written, no module docstring")
+            print("not written, no module docstring")
         else:
-            console("#\n# not written, no module docstring\n#\n")
-            console(open(fname).read())
+            print("#\n# not written, no module docstring\n#\n")
+            print(open(fname).read())
 
         return
 
@@ -235,16 +265,8 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     sourcesplit = source.split("\n")
     linestobottom = list(linestobottom)
     linestobottom.sort(key=lambda x: x[0])
-    global_lines = []
-
-    for ln in linestobottom:
-        cnt = ln[0] - 1
-        cont = []
-        while cnt < ln[1] - 1:
-            cont.append(sourcesplit[cnt])
-            cnt += 1
-        global_lines.append("\n".join(cont))
-
+    global_lines_top = get_global_lines(linestotop, sourcesplit)
+    global_lines_bottom = get_global_lines(linestobottom, sourcesplit)
     codes = []
 
     importsout = []
@@ -273,11 +295,10 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         importsout.append((code, 1))
 
     sourcesplit = source.split("\n")
-    source = [x for x in sourcesplit if not x.startswith("import ") and not x.startswith("from ")]
+
+    source = [x for x in sourcesplit if not x.startswith("import ") and not x.startswith("from ") and not x.startswith("# noinspection PyUnresolvedReferences")]
     source = "\n".join(source)
     classnames = sorted(classes.keys())
-
-    import collections
     bsort = False
     cnt = 0
 
@@ -318,7 +339,10 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     for n in methodnames:
         source, codes = get_source_lines(codes, n, module_name, source)
 
-    for n in global_lines:
+    for n in global_lines_top:
+        source = source.replace(n, "")
+
+    for n in global_lines_bottom:
         source = source.replace(n, "")
 
     lastfind, source = remove_breaks(source)
@@ -369,13 +393,31 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
         middle += code[0]
         middle += code[1] * "\n"
-    global_lines.sort()
 
-    for line in global_lines:
+    global_lines_top.sort(key=lambda x: len(x))
+    gltd = collections.deque()
+
+    for line in global_lines_top:
+        fw = line.split(" ")[0]
+
+        if len(gltd) == 0:
+            gltd.append(line)
+        elif fw in line:
+            gltd.appendleft(line)
+        else:
+            gltd.append(line)
+
+    for line in gltd:
+        first += line
+        first += "\n"
+
+    global_lines_bottom.sort(key=lambda x: len(x))
+
+    for line in global_lines_bottom:
         middle += line
         middle += "\n"
 
-    source = header + "\n\n" + first.strip() + "\n\n\n" + middle + "\n\n" + last
+    source = header + "\n\n" + first.strip() + "\n\n\n" + middle.strip() + "\n\n" + last.strip()
     lastfind, source = remove_breaks(source)
 
     # write new source
@@ -383,30 +425,17 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         nw = open(fname, "wt")
         nw.write(source)
         nw.close()
-        console("sortpythonmethods done.")
+        print("sortpythonmethods done.")
     else:
         if not sys.stdout.isatty():
-            console(source)
+            print(source)
         else:
 
             # noinspection PyBroadException
             try:
-                console(highlight(source, PythonLexer(), TerminalFormatter()))
+                print(highlight(source, PythonLexer(), TerminalFormatter()))
             except:
-                console(source, plaintext=True)
-
-
-def main():
-    """
-    main
-    """
-    parser, module_name, filename, writefile = arg_parse()
-
-    if module_name is None and filename is None:
-        console(parser.format_help())
-        console("-f filename or -m modulename is required\n")
-        return
-    sortmethods(filename, module_name, writefile)
+                print(source)
 
 
 if __name__ == "__main__":
