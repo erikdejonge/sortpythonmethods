@@ -124,4 +124,4 @@ def helloworld():
 - global pycharm directives
 
 ##screenshot
-![sorted_methods](res/sort_methods.jpg "Sorted methods in IntelliJ")
+![sorted_methods](res/sort_methods.png "Sorted methods in IntelliJ")
