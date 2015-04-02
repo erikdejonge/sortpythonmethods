@@ -24,6 +24,7 @@ def arg_parse():
     parser.add_argument("-f", dest="filename", help="file name on which to sort globalmethods")
     parser.add_argument("-w", dest="write", help="write output to file", action="store_true")
     args = parser.parse_args()
+
     return parser, args.modulename, args.filename, args.write
 
 
@@ -44,7 +45,7 @@ def get_global_lines(linestobottom, sourcesplit):
 
         global_lines.append("\n".join(cont))
 
-    return  [x for x in global_lines if x.strip() != '"""']
+    return [x for x in global_lines if x.strip() != '"""']
 
 
 def get_source_lines(codes, object_name, module_name, source):
@@ -192,23 +193,23 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             classes[n.name] = []
 
             for i in n.bases:
-
                 if hasattr(i, "id"):
                     if i.id != "object":
                         classes[n.name].append(i.id)
                 else:
                     print(n, i)
+
             for c in ast.walk(n):
                 if isinstance(c, ast.FunctionDef):
                     nestedmethodnames.append((c.name, id(c)))
 
         elif isinstance(n, ast.Import):
             for i in n.names:
-                if "builtins" not in i.name:
+                if i.name not in ["builtins", "__main__"]:
                     imports.append(i.name)
 
         elif isinstance(n, ast.ImportFrom):
-            if "builtins" not in n.module:
+            if n.module not in ["builtins", "__main__"]:
                 if n.module not in importfrom:
                     importfrom[n.module] = []
                 importfrom[n.module].append(n.names)
@@ -274,6 +275,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     importsout = []
     imports = list(set(imports))
+
     imports.sort(key=lambda x: (x.count("."), x, len(x)))
 
     for n in imports:
