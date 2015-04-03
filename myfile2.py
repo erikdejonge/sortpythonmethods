@@ -5,6 +5,7 @@
 x = {'a': 37, 'b': 42,
      'c': 927}
 
+
 class foo  (object):
 
     def f(self):
@@ -28,4 +29,4 @@ def f(a):
     @return: None
     """
     return 37 + -+a[42 - x: y**3]
-"""hello world"""
+

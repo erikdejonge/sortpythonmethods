@@ -272,8 +272,13 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     linestobottom = list(linestobottom)
     linestobottom.sort(key=lambda x: x[0])
     global_lines_top = get_global_lines(linestotop, sourcesplit)
-    global_lines_bottom = get_global_lines(linestobottom, sourcesplit)
-    global_lines_bottom = [x for x in global_lines_bottom if not x.count('"""')==2]
+    global_lines_bottom2 = get_global_lines(linestobottom, sourcesplit)
+    global_lines_bottom = []
+    for x in global_lines_bottom2:
+        if x.count('"""')==2:
+            source = source.replace(x, "")
+        else:
+            global_lines_bottom.append(x)
     codes = []
 
     importsout = []
