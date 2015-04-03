@@ -284,21 +284,21 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     importsout = []
     imports = list(set(imports))
 
-    imports.sort(key=lambda x: (x.count("."), x, len(x)))
+    imports.sort(key=lambda x: (x.count("."), len(x), x))
 
     for n in imports:
         code = "import " + n
 
         importsout.append((code, 1))
     importfromlist = list(set(list(importfrom.keys())))
-    importfromlist.sort(key=lambda x: (x.count("."), len(x), x))
+    importfromlist.sort(key=lambda x: (len(importfrom[x]), x.count("."), len(x), x))
 
     for n in importfromlist:
         code = "from " + n + " import "
 
         importlist = importfrom[n]
         importlist = list(set(importlist))
-        importlist.sort(key=lambda x: (x, len(x)))
+        importlist.sort(key=lambda x: (x.count("."), len(x), x))
 
         for m in importlist:
             code += m + ", "
@@ -378,7 +378,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             fromdetected = True
 
         if "future " in code[0] or "__future__" in code[0]:
-            first = code[0] + "\n\n" + first
+            first = code[0] + "\n" + first
         else:
             first += code[0]
             first += "\n"
