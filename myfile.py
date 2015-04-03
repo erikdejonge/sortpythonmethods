@@ -1,12 +1,14 @@
+#!/usr/bin/env python3
 # coding=utf-8
 """
 Docstring is required
 """
-import sys
-import http
+
 import email
-import concurrent.futures
+import http
 import os
+import sys
+import concurrent.futures
 
 
 class Zorro(object):
@@ -14,6 +16,53 @@ class Zorro(object):
     Zorro
     """
     pass
+
+
+class BBBB(Zorro):
+    """
+    BBBB
+    """
+    pass
+
+
+class AAA(BBBB):
+    """
+    AAA
+    """
+    pass
+
+
+class Alpha(object):
+    """
+    Alpha
+    """
+    pass
+
+
+class KKK(BBBB):
+    """
+    KKK
+    """
+    pass
+
+
+class ZZZ(BBBB):
+    """
+    ZZZ
+    """
+    pass
+
+
+def applemethod():
+    """
+    applemethod
+    """
+    print("hello world")
+    s = """foo
+    s = foo@type "hello world": str
+    @return: None
+    bar"""
+    print(s)
 
 
 def foobar():
@@ -33,49 +82,3 @@ def helloworld():
     """
     print(s)
 
-
-def applemethod():
-    """
-    applemethod
-    """
-    print("hello world")
-    s = """foo
-    s = foo@type "hello world": str
-    @return: None
-    bar"""
-    print(s)
-
-
-class Alpha(object):
-    """
-    Alpha
-    """
-    pass
-
-
-class BBBB(Zorro):
-    """
-    BBBB
-    """
-    pass
-
-
-class ZZZ(BBBB):
-    """
-    ZZZ
-    """
-    pass
-
-
-class KKK(BBBB):
-    """
-    KKK
-    """
-    pass
-
-
-class AAA(BBBB):
-    """
-    AAA
-    """
-    pass
