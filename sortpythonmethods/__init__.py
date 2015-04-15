@@ -111,12 +111,23 @@ def remove_breaks(source):
     return lastfind, source
 
 
+def get_operators(extra=None):
+    """
+    get_operators
+    """
+    ops = ['!=', '//', '&', '|', '<', '*', '>>', '%', '#', '=', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=']
+    if extra is not None:
+        ops.extend(extra)
+
+    return ops
+
+
 def isoperator(s):
     """
     @type s: str
     @return: None
     """
-    if s in ['!=', '//', '&', '|', '<', '*', '>>', '%', '#', '=', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=']:
+    if s in get_operators():
         return True
 
     return False
@@ -129,7 +140,8 @@ def startwithkeywordoperator(s, extras):
     @return: None
     """
     s = s.strip().strip(":")
-    ops = ["class", "import", "except", '!=', '//', '&', '|', '<', '*', '>>', '%', '=', '#', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=']
+    ops = ["class", "import", "except"]
+    ops.extend(get_operators())
     ops.extend(extras)
 
     for op in ops:
@@ -490,14 +502,41 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     for line in source.split("\n"):
         if not startwithkeywordoperator(line.strip(), forbiddenwords):
             ls = line.split("\"")
+
             if len(ls) == 1:
                 ls = line.split("'")
+
             line2 = []
+
             for c, i in enumerate(ls):
                 if c % 2 == 0:
                     line2.append(i)
+
             line = " ".join(line2)
-            for word in line.split():
+            ls = set()
+
+            # ['winner', 'None):']
+            # ['winnerNone', ':']
+            # ['winnerNone', '']
+            # winnerNone
+            # winner_none
+
+            for word1 in line.split():
+                found = False
+                for op in get_operators(["=", "(", ")", ":", ";", "[", "]", "@"]):
+                    if op in word1 and op != word1 and op * 2 != word1 and len(word1) > 2 and not found:
+                        found = True
+
+                        for w in word1.split(op):
+                            for op2 in get_operators(["=", "(", ")", ":", ";", "[", "]", "@"]):
+                                w = w.strip().strip(op2)
+
+                            ls.add(w)
+
+                if found is False:
+                    ls.add(word1)
+
+            for word in ls:
                 word = word.strip().strip(":")
 
                 if len(word) > 1 and not isoperator(word) and not startwithkeywordoperator(word, forbiddenwords) and not keyword.iskeyword(word) and word.strip() not in globalnames:
