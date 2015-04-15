@@ -15,7 +15,7 @@ def main():
     main
     """
     setup(name='sortpythonmethods',
-          version='16',
+          version='17',
           description='Sort methods, imports and classes in a python source file',
           url='https://github.com/erikdejonge/sortpythonmethod',
           author='Erik de Jonge',
