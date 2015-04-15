@@ -32,6 +32,25 @@ class AAA(BBBB):
     pass
 
 
+
+def FooBar():
+    """
+    foobar
+    """
+    print(sys, http, email, concurrent.futures, os)
+
+
+def helloworld():
+    """
+    helloworld
+    """
+    s = """foo
+    bar hello
+    world
+    """
+    print(s)
+
+
 class Alpha(object):
     """
     Alpha
@@ -62,23 +81,6 @@ def applemethod():
     s = foo@type "hello world": str
     @return: None
     bar"""
+
+    fooBar = 8
     print(s)
-
-
-def FooBar():
-    """
-    foobar
-    """
-    print(sys, http, email, concurrent.futures, os)
-
-
-def helloworld():
-    """
-    helloworld
-    """
-    s = """foo
-    bar hello
-    world
-    """
-    print(s)
-

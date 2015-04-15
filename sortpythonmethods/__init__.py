@@ -122,14 +122,34 @@ def isoperator(s):
     return False
 
 
-def startwithkeywordoperator(s):
+def startwithkeywordoperator(s, extras):
     """
     @type s: str
+    @type extras: set
     @return: None
     """
     s = s.strip().strip(":")
-    for op in ["class", "import", '!=', '//', '&', '|', '<', '*', '>>', '%', '=', '#', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=']:
+    ops = ["class", "import", '!=', '//', '&', '|', '<', '*', '>>', '%', '=', '#', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=']
+    ops.extend(extras)
+
+    for op in ops:
         if s.startswith(op):
+            cnt = 0
+
+            for w in s.split(" "):
+                extras.add(w)
+
+                for w2 in w.split("("):
+                    extras.add(w2)
+
+                for w2 in w.split("."):
+                    extras.add(w2)
+
+                cnt += 1
+
+                if cnt > 2:
+                    break
+
             return True
 
     return False
@@ -465,17 +485,16 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             source = source.replace(m, scm)
 
     globalnames = globals().keys()
+    forbiddenwords = set()
 
     for line in source.split("\n"):
-
-        if not startwithkeywordoperator(line.strip()):
+        if not startwithkeywordoperator(line.strip(), forbiddenwords):
             for word in line.split():
                 word = word.strip().strip(":")
 
-                if len(word) > 1 and not isoperator(word) and not startwithkeywordoperator(word) and not keyword.iskeyword(word) and word.strip() not in globalnames:
+                if len(word) > 1 and not isoperator(word) and not startwithkeywordoperator(word, forbiddenwords) and not keyword.iskeyword(word) and word.strip() not in globalnames:
                     wscm = snake_case(word)
                     if word != wscm:
-                        print({1: word})
                         source = source.replace(word, wscm)
 
     # write new source
