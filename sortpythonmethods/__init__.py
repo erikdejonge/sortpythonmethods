@@ -3,13 +3,14 @@
 """
 sortpython
 """
-
 import ast
 import collections
 import inspect
 import os
 import sys
+import keyword
 
+from consoleprinter import snake_case
 from argparse import ArgumentParser
 from pygments import highlight
 from pygments.lexers import PythonLexer
@@ -108,6 +109,30 @@ def remove_breaks(source):
         cnt += 1
 
     return lastfind, source
+
+
+def isoperator(s):
+    """
+    @type s: str
+    @return: None
+    """
+    if s in ['!=', '//', '&', '|', '<', '*', '>>', '%', '#', '=', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=']:
+        return True
+
+    return False
+
+
+def startwithkeywordoperator(s):
+    """
+    @type s: str
+    @return: None
+    """
+    s = s.strip().strip(":")
+    for op in ["class", "import", '!=', '//', '&', '|', '<', '*', '>>', '%', '=', '#', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=']:
+        if s.startswith(op):
+            return True
+
+    return False
 
 
 def sortmethods(filename=None, module_name=None, writefile=False):
@@ -274,16 +299,17 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     global_lines_top = get_global_lines(linestotop, sourcesplit)
     global_lines_bottom2 = get_global_lines(linestobottom, sourcesplit)
     global_lines_bottom = []
+
     for x in global_lines_bottom2:
-        if x.count('"""')==2:
+        if x.count('"""') == 2:
             source = source.replace(x, "")
         else:
             global_lines_bottom.append(x)
+
     codes = []
 
     importsout = []
     imports = list(set(imports))
-
     imports.sort(key=lambda x: (x.count("."), len(x), x))
 
     for n in imports:
@@ -354,7 +380,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     for n in global_lines_top:
         source = source.replace(n, "")
-
 
     for n in global_lines_bottom:
         source = source.replace(n, "")
@@ -434,6 +459,25 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     source = header + "\n\n" + first.strip() + "\n\n\n" + middle.strip() + "\n\n" + last.strip()
     lastfind, source = remove_breaks(source)
 
+    for m in methodnames:
+        scm = snake_case(m)
+        if m != scm:
+            source = source.replace(m, scm)
+
+    globalnames = globals().keys()
+
+    for line in source.split("\n"):
+
+        if not startwithkeywordoperator(line.strip()):
+            for word in line.split():
+                word = word.strip().strip(":")
+
+                if len(word) > 1 and not isoperator(word) and not startwithkeywordoperator(word) and not keyword.iskeyword(word) and word.strip() not in globalnames:
+                    wscm = snake_case(word)
+                    if word != wscm:
+                        print({1: word})
+                        source = source.replace(word, wscm)
+
     # write new source
     if writefile:
         nw = open(fname, "wt")
@@ -450,6 +494,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                 print(highlight(source, PythonLexer(), TerminalFormatter()))
             except:
                 print(source)
+
 
 if __name__ == "__main__":
     main()

@@ -65,7 +65,7 @@ def applemethod():
     print(s)
 
 
-def foobar():
+def FooBar():
     """
     foobar
     """
