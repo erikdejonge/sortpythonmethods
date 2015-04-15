@@ -494,6 +494,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     for m in methodnames:
         scm = snake_case(m)
         if m != scm:
+
             source = source.replace(m, scm)
 
     globalnames = globals().keys()
@@ -537,11 +538,13 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                     ls.add(word1)
 
             for word in ls:
-                word = word.strip().strip(":")
+                for op2 in get_operators(["=", "(", ")", ":", ";", "[", "]", "@"]):
+                    word = word.strip().strip(op2)
 
                 if len(word) > 1 and not isoperator(word) and not startwithkeywordoperator(word, forbiddenwords) and not keyword.iskeyword(word) and word.strip() not in globalnames:
                     wscm = snake_case(word)
                     if word != wscm:
+                        print(word)
                         source = source.replace(word, wscm)
 
     # write new source
