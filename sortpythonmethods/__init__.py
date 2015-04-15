@@ -115,11 +115,11 @@ def get_operators(extra=None):
     """
     get_operators
     """
-    ops = ['!=', '//', '&', '|', '<', '*', '>>', '%', '#', '=', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=']
+    ops = {'!=', '//', '&', '|', '<', '*', '>>', '%', '#', '.', '=', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=', "=", "(", ")", ":", ";", "[", "]", "@"}
     if extra is not None:
-        ops.extend(extra)
+        ops.add(extra)
 
-    return ops
+    return list(ops)
 
 
 def isoperator(s):
@@ -255,8 +255,8 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                 if hasattr(i, "id"):
                     if i.id != "object":
                         classes[n.name].append(i.id)
-                else:
-                    print(n, i)
+                #else:
+                #    print(n, i)
 
             for c in ast.walk(n):
                 if isinstance(c, ast.FunctionDef):
@@ -498,54 +498,79 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             source = source.replace(m, scm)
 
     globalnames = globals().keys()
-    forbiddenwords = set()
+    forbiddenwords = {"None", "True", "False"}
 
     for line in source.split("\n"):
-        if not startwithkeywordoperator(line.strip(), forbiddenwords):
-            ls = line.split("\"")
+        if line.count("=") == 1:
+            line = line.strip()
+            ls = line.split()
+            if len(ls) > 1 and ls[1] == "=":
+                ls2 = line.split("=")
 
-            if len(ls) == 1:
-                ls = line.split("'")
+                word = ls2[0].strip()
 
-            line2 = []
-
-            for c, i in enumerate(ls):
-                if c % 2 == 0:
-                    line2.append(i)
-
-            line = " ".join(line2)
-            ls = set()
-
-            # ['winner', 'None):']
-            # ['winnerNone', ':']
-            # ['winnerNone', '']
-            # winnerNone
-            # winner_none
-
-            for word1 in line.split():
-                found = False
-                for op in get_operators(["=", "(", ")", ":", ";", "[", "]", "@"]):
-                    if op in word1 and op != word1 and op * 2 != word1 and len(word1) > 2 and not found:
-                        found = True
-
-                        for w in word1.split(op):
-                            for op2 in get_operators(["=", "(", ")", ":", ";", "[", "]", "@"]):
-                                w = w.strip().strip(op2)
-
-                            ls.add(w)
-
-                if found is False:
-                    ls.add(word1)
-
-            for word in ls:
-                for op2 in get_operators(["=", "(", ")", ":", ";", "[", "]", "@"]):
-                    word = word.strip().strip(op2)
+                if word.startswith("self."):
+                    word = word.replace("self.", "")
+                for op in get_operators():
+                    if op in word:
+                        word = word.split(op)[0]
+                word = word.strip()
 
                 if len(word) > 1 and not isoperator(word) and not startwithkeywordoperator(word, forbiddenwords) and not keyword.iskeyword(word) and word.strip() not in globalnames:
                     wscm = snake_case(word)
-                    if word != wscm:
-                        print(word)
+                    if word != wscm and wscm.upper() != word:
+                        print(word, "->", wscm)
+                        forbiddenwords.add(word)
                         source = source.replace(word, wscm)
+
+
+                        #for word in line.split():
+            #    print(word)
+        # if not startwithkeywordoperator(line.strip(), forbiddenwords):
+        #     ls = line.split("\"")
+        #
+        #     if len(ls) == 1:
+        #         ls = line.split("'")
+        #
+        #     line2 = []
+        #
+        #     for c, i in enumerate(ls):
+        #         if c % 2 == 0:
+        #             line2.append(i)
+        #
+        #     line = " ".join(line2)
+        #     ls = set()
+        #
+        #     # ['winner', 'None):']
+        #     # ['winnerNone', ':']
+        #     # ['winnerNone', '']
+        #     # winnerNone
+        #     # winner_none
+        #
+        #     for word1 in line.split():
+        #         found = False
+        #         for op in get_operators(["=", "(", ")", ":", ";", "[", "]", "@"]):
+        #             if op in word1 and op != word1 and op * 2 != word1 and len(word1) > 2 and not found:
+        #                 found = True
+        #
+        #                 for w in word1.split(op):
+        #                     for op2 in get_operators(["=", "(", ")", ":", ";", "[", "]", "@"]):
+        #                         w = w.strip().strip(op2)
+        #
+        #                     ls.add(w)
+        #
+        #         if found is False:
+        #             ls.add(word1)
+        #
+        #     for word in ls:
+        #         for op2 in get_operators(["=", "(", ")", ":", ";", "[", "]", "@"]):
+        #             word = word.strip().strip(op2)
+        #
+        #         if len(word) > 1 and not isoperator(word) and not startwithkeywordoperator(word, forbiddenwords) and not keyword.iskeyword(word) and word.strip() not in globalnames:
+        #             wscm = snake_case(word)
+        #             if word != wscm:
+        #                 print(word)
+        #                 source = source.replace(word, wscm)
 
     # write new source
     if writefile:
