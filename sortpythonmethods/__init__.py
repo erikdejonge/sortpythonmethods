@@ -489,6 +489,14 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     for line in source.split("\n"):
         if not startwithkeywordoperator(line.strip(), forbiddenwords):
+            ls = line.split("\"")
+            if len(ls) == 1:
+                ls = line.split("'")
+            line2 = []
+            for c, i in enumerate(ls):
+                if c % 2 == 0:
+                    line2.append(i)
+            line = " ".join(line2)
             for word in line.split():
                 word = word.strip().strip(":")
 
@@ -502,7 +510,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         nw = open(fname, "wt")
         nw.write(source)
         nw.close()
-        print("sortpythonmethods done.")
     else:
         if not sys.stdout.isatty():
             print(source)
