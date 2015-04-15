@@ -129,7 +129,7 @@ def startwithkeywordoperator(s, extras):
     @return: None
     """
     s = s.strip().strip(":")
-    ops = ["class", "import", '!=', '//', '&', '|', '<', '*', '>>', '%', '=', '#', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=']
+    ops = ["class", "import", "except", '!=', '//', '&', '|', '<', '*', '>>', '%', '=', '#', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=']
     ops.extend(extras)
 
     for op in ops:
