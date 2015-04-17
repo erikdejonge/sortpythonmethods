@@ -79,6 +79,10 @@ def main():
     """
     parser, module_name, filename, writefile = arg_parse()
 
+    if not filename.strip().endswith(".py"):
+        print("not a python file", filename)
+        exit(1)
+
     if module_name is None and filename is None:
         print(parser.format_help())
         print("-f filename or -m modulename is required\n")
@@ -115,7 +119,36 @@ def get_operators(extra=None):
     """
     get_operators
     """
-    ops = {'!=', '//', '&', '|', '<', '*', '>>', '%', '#', '.', '=', '+', '-', '>', '==', '**', '/', '>=', '<<', '^', '<=', "=", "(", ")", ":", ";", "[", "]", "@"}
+    ops = {'!=',
+           '//',
+           '&',
+           '|',
+           '<',
+           '*',
+           '>>',
+           '%',
+           '#',
+           '.',
+           '=',
+           '+',
+           '-',
+           '>',
+           '==',
+           '**',
+           '/',
+           '>=',
+           '<<',
+           '^',
+           '<=',
+           "=",
+           "(",
+           ")",
+           ":",
+           ";",
+           "[",
+           "]",
+           "@"}
+
     if extra is not None:
         ops.add(extra)
 
@@ -211,6 +244,10 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     # get filepath of module implementation
     fname = globals()[module_name].__file__
 
+    if not fname.strip().endswith(".py"):
+        print("not a python file")
+        exit(1)
+
     if not os.path.isdir(os.path.dirname(fname)):
         if filename is None:
             raise AssertionError("not a dir")
@@ -255,7 +292,8 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                 if hasattr(i, "id"):
                     if i.id != "object":
                         classes[n.name].append(i.id)
-                #else:
+
+                # else:
                 #    print(n, i)
 
             for c in ast.walk(n):
@@ -343,21 +381,18 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     importsout = []
     imports = list(set(imports))
     imports.sort(key=lambda x: (x.count("."), len(x), x))
-
     for n in imports:
         code = "import " + n
 
         importsout.append((code, 1))
     importfromlist = list(set(list(importfrom.keys())))
     importfromlist.sort(key=lambda x: (len(importfrom[x]), x.count("."), len(x), x))
-
     for n in importfromlist:
         code = "from " + n + " import "
 
         importlist = importfrom[n]
         importlist = list(set(importlist))
         importlist.sort(key=lambda x: (x.count("."), len(x), x))
-
         for m in importlist:
             code += m + ", "
 
@@ -366,7 +401,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         importsout.append((code, 1))
 
     sourcesplit = source.split("\n")
-
     source = [x for x in sourcesplit if not x.startswith("import ") and not x.startswith("from ") and not x.startswith("# noinspection")]
     source = "\n".join(source)
     classnames = sorted(classes.keys())
@@ -382,7 +416,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         baseclass_seen = []
         baseclass_missing = []
         classnamesbase = collections.deque()
-
         for k in classnames:
             if k in classes:
                 baseclass_seen.append(k)
@@ -397,22 +430,17 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             for k in baseclass_missing:
                 if k not in classnamesbase:
                     classnamesbase.appendleft(k)
-
             for k in baseclass_seen:
                 if k not in classnamesbase:
                     classnamesbase.append(k)
 
             classnames = list(classnamesbase)
-
     for k in classnames:
         source, codes = get_source_lines(codes, k, module_name, source)
-
     for n in methodnames:
         source, codes = get_source_lines(codes, n, module_name, source)
-
     for n in global_lines_top:
         source = source.replace(n, "")
-
     for n in global_lines_bottom:
         source = source.replace(n, "")
 
@@ -426,7 +454,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     header += moduledocstring
     header += '"""'
     fromdetected = False
-
     for code in importsout:
         if code[0].startswith("from"):
             if not fromdetected:
@@ -445,13 +472,11 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     if len(fss) > 1:
         fssc = fss[1].lstrip().lstrip('"""')
         first += fssc
-
     for code in codes:
         codesplit = code[0].split("\n")
 
         if len(codesplit) > 0:
             cnt = 0
-
             for line in sourcesplit:
                 if codesplit[0] in line:
                     if (cnt - 1) > 0:
@@ -467,7 +492,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     global_lines_top.sort(key=lambda x: len(x))
     gltd = collections.deque()
-
     for line in global_lines_top:
         fw = line.split(" ")[0]
 
@@ -477,37 +501,31 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             gltd.appendleft(line)
         else:
             gltd.append(line)
-
     for line in gltd:
         first += line
         first += "\n"
 
     global_lines_bottom.sort(key=lambda x: (x, len(x)))
-
     for line in global_lines_bottom:
-
         middle += line.replace('"""', "").strip()
         middle += "\n"
 
     source = header + "\n\n" + first.strip() + "\n\n\n" + middle.strip() + "\n\n" + last.strip()
     lastfind, source = remove_breaks(source)
-
     for m in methodnames:
         scm = snake_case(m)
         if m != scm:
-
             source = source.replace(m, scm)
 
     globalnames = globals().keys()
     forbiddenwords = {"None", "True", "False"}
-
     for line in source.split("\n"):
         if line.count("=") == 1:
             line = line.strip()
             ls = line.split()
+
             if len(ls) > 1 and ls[1] == "=":
                 ls2 = line.split("=")
-
                 word = ls2[0].strip()
 
                 if word.startswith("self."):
@@ -515,10 +533,12 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                 for op in get_operators():
                     if op in word:
                         word = word.split(op)[0]
+
                 word = word.strip()
 
                 if len(word) > 1 and not isoperator(word) and not startwithkeywordoperator(word, forbiddenwords) and not keyword.iskeyword(word) and word.strip() not in globalnames:
                     wscm = snake_case(word)
+
                     if word != wscm and wscm.upper() != word:
                         print(word, "->", wscm)
                         forbiddenwords.add(word)
