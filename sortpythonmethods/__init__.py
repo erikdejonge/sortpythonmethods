@@ -61,6 +61,19 @@ def get_source_lines(codes, object_name, module_name, source):
     """
     try:
         code = "".join(inspect.getsourcelines(getattr(globals()[module_name], object_name))[0])
+        buffer = False
+        source2 = ""
+        lines = []
+        for l in code.split("\n"):
+            print(l)
+
+            if l.strip().startswith('"""'):
+                buffer = not buffer
+
+            if buffer is True:
+                lines.append(l)
+        print("\n ".join(lines))
+        exit(1)
         codes.append((code, 3))
         source = source.replace(code, "")
         return source, codes
@@ -424,6 +437,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                         if k2 in classes:
                             baseclass_missing.append(k2)
 
+
         if len(baseclass_missing) == 0:
             bsort = True
         else:
@@ -438,6 +452,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     for k in classnames:
         source, codes = get_source_lines(codes, k, module_name, source)
     for n in methodnames:
+
         source, codes = get_source_lines(codes, n, module_name, source)
     for n in global_lines_top:
         source = source.replace(n, "")
