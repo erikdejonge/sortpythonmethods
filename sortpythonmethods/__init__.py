@@ -7,17 +7,13 @@ import ast
 import collections
 import inspect
 import os
-import sys
 import keyword
 
 from consoleprinter import snake_case
 from argparse import ArgumentParser
-from pygments import highlight
-from pygments.lexers import PythonLexer
-from pygments.formatters import TerminalFormatter
 
 
-def arg_parse():
+def arg_parse() -> ArgumentParser:
     """
     arg_parse
     @return: @rtype:
@@ -62,18 +58,15 @@ def get_source_lines(codes, object_name, module_name, source):
     try:
         code = "".join(inspect.getsourcelines(getattr(globals()[module_name], object_name))[0])
         buffer = False
-        source2 = ""
         lines = []
-        for l in code.split("\n"):
-            print(l)
 
+        for l in code.split("\n"):
             if l.strip().startswith('"""'):
                 buffer = not buffer
 
             if buffer is True:
                 lines.append(l)
-        print("\n ".join(lines))
-        exit(1)
+
         codes.append((code, 3))
         source = source.replace(code, "")
         return source, codes
@@ -130,7 +123,8 @@ def remove_breaks(source):
 
 def get_operators(extra=None):
     """
-    get_operators
+    @type extra: list, None
+    @return: list
     """
     ops = {'!=',
            '//',
@@ -437,7 +431,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                         if k2 in classes:
                             baseclass_missing.append(k2)
 
-
         if len(baseclass_missing) == 0:
             bsort = True
         else:
@@ -452,7 +445,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     for k in classnames:
         source, codes = get_source_lines(codes, k, module_name, source)
     for n in methodnames:
-
         source, codes = get_source_lines(codes, n, module_name, source)
     for n in global_lines_top:
         source = source.replace(n, "")
@@ -565,16 +557,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         nw.write(source)
         nw.close()
     else:
-        if not sys.stdout.isatty():
-            print(source)
-        else:
-
-            # noinspection PyBroadException
-            try:
-                print(highlight(source, PythonLexer(), TerminalFormatter()))
-            except:
-                print(source)
-
-
+        print(source)
 if __name__ == "__main__":
     main()
