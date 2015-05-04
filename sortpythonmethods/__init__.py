@@ -369,6 +369,10 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     # sort methodnames and request source code from module
     methodnames = sorted(methodnames)
+    if "main" in methodnames:
+        methodnames.remove("main")
+        methodnames.append("main")
+
     source = open(fname).read()
     sourcesplit = source.split("\n")
     linestobottom = list(linestobottom)
