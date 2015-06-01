@@ -76,6 +76,7 @@ def get_source_lines(codes, object_name, module_name, source):
         print("--")
         print(be)
         print("==========")
+
         raise
 
 
@@ -262,7 +263,19 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             fname = filename
 
     # get all function methodnames on global scope
-    tree = ast.parse(open(fname).read(), os.path.basename(fname))
+    content = b""
+    content2 = open(fname).read()
+    cnt = 0
+    fname = fname.encode("ascii")
+
+    for line in content2.split("\n"):
+        cnt += 1
+        try:
+            content += line.strip().encode("ascii")
+        except UnicodeEncodeError:
+            print("\033[34m" + str(cnt) + ":" + "\033[34m", line.strip(), "\033[0m")
+
+    tree = ast.parse(content2, os.path.basename(fname))
     methodnames = []
     nestedmethodnames = []
     classes = {}
@@ -369,6 +382,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     # sort methodnames and request source code from module
     methodnames = sorted(methodnames)
+
     if "main" in methodnames:
         methodnames.remove("main")
         methodnames.append("main")
@@ -386,44 +400,34 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             source = source.replace(x, "")
         else:
             global_lines_bottom.append(x)
-
     codes = []
-
     importsout = []
     imports = list(set(imports))
     imports.sort(key=lambda x: (x.count("."), len(x), x))
     for n in imports:
         code = "import " + n
-
         importsout.append((code, 1))
     importfromlist = list(set(list(importfrom.keys())))
     importfromlist.sort(key=lambda x: (len(importfrom[x]), x.count("."), len(x), x))
     for n in importfromlist:
         code = "from " + n + " import "
-
         importlist = importfrom[n]
         importlist = list(set(importlist))
         importlist.sort(key=lambda x: (x.count("."), len(x), x))
         for m in importlist:
             code += m + ", "
-
         code = code.strip().strip(",")
-
         importsout.append((code, 1))
-
     sourcesplit = source.split("\n")
     source = [x for x in sourcesplit if not x.startswith("import ") and not x.startswith("from ") and not x.startswith("# noinspection")]
     source = "\n".join(source)
     classnames = sorted(classes.keys())
     bsort = False
     cnt = 0
-
     while not bsort:
         cnt += 1
-
         if cnt > 100:
             raise AssertionError("infinite loop")
-
         baseclass_seen = []
         baseclass_missing = []
         classnamesbase = collections.deque()
@@ -434,7 +438,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                     if k2 not in baseclass_seen:
                         if k2 in classes:
                             baseclass_missing.append(k2)
-
         if len(baseclass_missing) == 0:
             bsort = True
         else:
@@ -444,7 +447,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
             for k in baseclass_seen:
                 if k not in classnamesbase:
                     classnamesbase.append(k)
-
             classnames = list(classnamesbase)
     for k in classnames:
         source, codes = get_source_lines(codes, k, module_name, source)
@@ -454,7 +456,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         source = source.replace(n, "")
     for n in global_lines_bottom:
         source = source.replace(n, "")
-
     lastfind, source = remove_breaks(source)
     firstsource = source[:lastfind]
     last = source[lastfind:]
@@ -469,23 +470,18 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         if code[0].startswith("from"):
             if not fromdetected:
                 first += "\n"
-
             fromdetected = True
-
         if "future " in code[0] or "__future__" in code[0]:
             first = code[0] + "\n" + first
         else:
             first += code[0]
             first += "\n"
-
     fss = firstsource.split(moduledocstring)
-
     if len(fss) > 1:
         fssc = fss[1].lstrip().lstrip('"""')
         first += fssc
     for code in codes:
         codesplit = code[0].split("\n")
-
         if len(codesplit) > 0:
             cnt = 0
             for line in sourcesplit:
@@ -495,17 +491,13 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                             if sourcesplit[cnt - 1].strip().startswith("#"):
                                 middle += sourcesplit[cnt - 1] + "\n"
                                 break
-
                 cnt += 1
-
         middle += code[0]
         middle += code[1] * "\n"
-
     global_lines_top.sort(key=lambda x: len(x))
     gltd = collections.deque()
     for line in global_lines_top:
         fw = line.split(" ")[0]
-
         if len(gltd) == 0:
             gltd.append(line)
         elif fw in line:
@@ -515,41 +507,33 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     for line in gltd:
         first += line
         first += "\n"
-
     global_lines_bottom.sort(key=lambda x: (x, len(x)))
     for line in global_lines_bottom:
         middle += line.replace('"""', "").strip()
         middle += "\n"
-
     source = header + "\n\n" + first.strip() + "\n\n\n" + middle.strip() + "\n\n" + last.strip()
     lastfind, source = remove_breaks(source)
     for m in methodnames:
         scm = snake_case(m)
         if m != scm:
             source = source.replace(m, scm)
-
     globalnames = globals().keys()
     forbiddenwords = {"None", "True", "False"}
     for line in source.split("\n"):
         if line.count("=") == 1:
             line = line.strip()
             ls = line.split()
-
             if len(ls) > 1 and ls[1] == "=":
                 ls2 = line.split("=")
                 word = ls2[0].strip()
-
                 if word.startswith("self."):
                     word = word.replace("self.", "")
                 for op in get_operators():
                     if op in word:
                         word = word.split(op)[0]
-
                 word = word.strip()
-
                 if len(word) > 1 and not isoperator(word) and not startwithkeywordoperator(word, forbiddenwords) and not keyword.iskeyword(word) and word.strip() not in globalnames:
                     wscm = snake_case(word)
-
                     if word != wscm and wscm.upper() != word:
                         print(word, "->", wscm)
                         forbiddenwords.add(word)
