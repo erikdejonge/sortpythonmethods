@@ -543,6 +543,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     if writefile:
         nw = open(fname, "wt")
         nw.write(source)
+        nw.write("\n\n")
         nw.close()
     else:
         print(source)
