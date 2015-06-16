@@ -15,13 +15,13 @@ def main():
     main
     """
     setup(name='sortpythonmethods',
-          version='28',
+          version='29',
           description='Sort methods, imports and classes in a python source file',
           url='https://github.com/erikdejonge/sortpythonmethod',
           author='Erik de Jonge',
           author_email='erik@a8.nl',
           license='GPL',
-          packages=['sortpythonmethods'],
+          packages=[b'sortpythonmethods'],
           zip_safe=True,
           entry_points={
               'console_scripts': [
