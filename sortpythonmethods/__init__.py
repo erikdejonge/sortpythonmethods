@@ -494,19 +494,23 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                 cnt += 1
         middle += code[0]
         middle += code[1] * "\n"
-    global_lines_top.sort(key=lambda x: len(x))
+    global_lines_top.sort(key=lambda x: (0-(ord(x.strip("G_")[0]) +ord(x.strip("G_")[1])), 0-len(x)))
     gltd = collections.deque()
+    print(global_lines_top)
     for line in global_lines_top:
-        fw = line.split(" ")[0]
+        fw = line.strip().split(" ")[0]
         if len(gltd) == 0:
             gltd.append(line)
         elif fw in line:
             gltd.appendleft(line)
         else:
             gltd.append(line)
+    first += "[n]"
     for line in gltd:
-        first += line
+        first = first.strip()
         first += "\n"
+        first += line
+    first = first.replace("[n]", "\n")
     global_lines_bottom.sort(key=lambda x: (x, len(x)))
     for line in global_lines_bottom:
         middle += line.replace('"""', "").strip()
