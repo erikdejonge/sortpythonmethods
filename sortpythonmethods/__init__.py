@@ -3,17 +3,25 @@
 """
 sortpython
 """
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import ast
 import collections
 import inspect
 import os
 import keyword
 
-from consoleprinter import snake_case
+from consoleprinter import snake_case, console
 from argparse import ArgumentParser
 
 
-def arg_parse() -> ArgumentParser:
+def arg_parse():
     """
     arg_parse
     @return: @rtype:
@@ -57,6 +65,10 @@ def get_source_lines(codes, object_name, module_name, source):
     """
     try:
         code = "".join(inspect.getsourcelines(getattr(globals()[module_name], object_name))[0])
+    except BaseException as be:
+        console(be, fileref=True)
+        console(module_name, object_name, fileref=True)
+    try:
         buffer = False
         lines = []
 
@@ -71,11 +83,11 @@ def get_source_lines(codes, object_name, module_name, source):
         source = source.replace(code, "")
         return source, codes
     except BaseException as be:
-        print("==========")
-        print(module_name, object_name)
-        print("--")
-        print(be)
-        print("==========")
+        console("==========")
+        console(module_name, object_name, fileref=True)
+        console("--")
+        console(be, fileref=True)
+        console("==========")
 
         raise
 
@@ -87,12 +99,12 @@ def main():
     parser, module_name, filename, writefile = arg_parse()
 
     if not filename.strip().endswith(".py"):
-        print("not a python file", filename)
+        console(("not a python file", filename))
         exit(1)
 
     if module_name is None and filename is None:
-        print(parser.format_help())
-        print("-f filename or -m modulename is required\n")
+        console(parser.format_help())
+        console("-f filename or -m modulename is required\n")
         return
 
     sortmethods(filename, module_name, writefile)
@@ -223,7 +235,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         filename = os.path.abspath(filename)
 
         if not os.path.expanduser(filename):
-            print("file does not exist:", filename)
+            console(("file does not exist:", filename))
             return
 
         if os.path.basename(filename) == "__init__.py":
@@ -240,12 +252,12 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         globals()[module_name] = __import__(module_name)
     except ImportError as ie:
         if writefile:
-            print("not written, import error", ie)
+            console(("not written, import error", ie))
         else:
-            print("#\n# not written, importerror " + str(ie) + "\n#\n")
+            console("#\n# not written, importerror " + str(ie) + "\n#\n")
 
             if filename is not None:
-                print(open(filename).read())
+                console(open(filename).read())
 
         return
 
@@ -253,7 +265,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
     fname = globals()[module_name].__file__
 
     if not fname.strip().endswith(".py"):
-        print("not a python file")
+        console("not a python file")
         exit(1)
 
     if not os.path.isdir(os.path.dirname(fname)):
@@ -273,7 +285,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         try:
             content += line.strip().encode("ascii")
         except UnicodeEncodeError:
-            print("\033[34m" + str(cnt) + ":" + "\033[34m", line.strip(), "\033[0m")
+            console("\033[34m" + str(cnt) + ":" + "\033[34m", line.strip(), "\033[0m", fileref=True)
 
     tree = ast.parse(content2, os.path.basename(fname))
     methodnames = []
@@ -314,7 +326,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                         classes[n.name].append(i.id)
 
                 # else:
-                #    print(n, i)
+                #    console(n, i)
 
             for c in ast.walk(n):
                 if isinstance(c, ast.FunctionDef):
@@ -373,10 +385,10 @@ def sortmethods(filename=None, module_name=None, writefile=False):
 
     if moduledocstring is None:
         if writefile:
-            print("not written, no module docstring")
+            console("not written, no module docstring")
         else:
-            print("#\n# not written, no module docstring\n#\n")
-            print(open(fname).read())
+            console("#\n# not written, no module docstring\n#\n")
+            console(open(fname).read())
 
         return
 
@@ -496,7 +508,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         middle += code[1] * "\n"
     global_lines_top.sort(key=lambda x: (0-(ord(x.strip("G_")[0]) +ord(x.strip("G_")[1])), 0-len(x)))
     gltd = collections.deque()
-    print(global_lines_top)
+    console(global_lines_top)
     for line in global_lines_top:
         fw = line.strip().split(" ")[0]
         if len(gltd) == 0:
@@ -521,7 +533,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         scm = snake_case(m)
         if m != scm:
             source = source.replace(m, scm)
-    globalnames = globals().keys()
+    globalnames = list(globals().keys())
     forbiddenwords = {"None", "True", "False"}
     for line in source.split("\n"):
         if line.count("=") == 1:
@@ -539,7 +551,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                 if len(word) > 1 and not isoperator(word) and not startwithkeywordoperator(word, forbiddenwords) and not keyword.iskeyword(word) and word.strip() not in globalnames:
                     wscm = snake_case(word)
                     if word != wscm and wscm.upper() != word:
-                        print(word, "->", wscm)
+                        console((word, "->", wscm))
                         forbiddenwords.add(word)
                         source = source.replace(word, wscm)
 
@@ -550,6 +562,6 @@ def sortmethods(filename=None, module_name=None, writefile=False):
         nw.write("\n\n")
         nw.close()
     else:
-        print(source)
+        console(source)
 if __name__ == "__main__":
     main()
