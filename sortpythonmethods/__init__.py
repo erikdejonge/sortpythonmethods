@@ -506,7 +506,7 @@ def sortmethods(filename=None, module_name=None, writefile=False):
                 cnt += 1
         middle += code[0]
         middle += code[1] * "\n"
-    global_lines_top.sort(key=lambda x: (0-(ord(x.strip("G_")[0]) +ord(x.strip("G_")[1])), 0-len(x)))
+    global_lines_top.sort(key=lambda x: (0 - (ord(x.strip("G_")[0]) + ord(x.strip("G_")[1])), 0 - len(x)))
     gltd = collections.deque()
     console(global_lines_top)
     for line in global_lines_top:
